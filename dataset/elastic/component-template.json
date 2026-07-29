@@ -1,0 +1,30 @@
+{
+  "template": {
+    "settings": {
+      "number_of_replicas": 0,
+      "number_of_shards": 1
+    },
+    "mappings": {
+      "date_detection": false,
+      "dynamic_templates": [
+        { "strings_as_keyword": {
+            "match_mapping_type": "string",
+            "mapping": { "type": "keyword", "ignore_above": 8192 } } }
+      ],
+      "properties": {
+        "@timestamp":               { "type": "date" },
+        "source":       { "properties": { "ip": {"type":"ip"}, "port": {"type":"long"}, "bytes": {"type":"long"} } },
+        "destination":  { "properties": { "ip": {"type":"ip"}, "port": {"type":"long"}, "bytes": {"type":"long"} } },
+        "host":         { "properties": { "ip": {"type":"ip"}, "name": {"type":"keyword"} } },
+        "process":      { "properties": {
+                            "pid": {"type":"long"}, "parent": {"properties": {"pid":{"type":"long"}}},
+                            "command_line": {"type":"wildcard"},
+                            "args": {"type":"keyword"} } },
+        "message":      { "type": "match_only_text" },
+        "url":          { "properties": { "original": {"type":"wildcard"}, "path": {"type":"wildcard"} } },
+        "user_agent":   { "properties": { "original": {"type":"wildcard"} } },
+        "dns":          { "properties": { "question": { "properties": { "name": {"type":"wildcard"} } } } }
+      }
+    }
+  }
+}

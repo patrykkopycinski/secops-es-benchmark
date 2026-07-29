@@ -1,0 +1,15 @@
+# secrets / raw data — never commit
+.env
+*.env
+!*.env.example
+.salt
+*.raw.ndjson
+# runtime / cruft
+benchmark/results/
+__pycache__/
+*.pyc
+.DS_Store
+/tmp/
+
+# internal operator doc — not for publication (SSH key names, live ops, infra)
+HANDOFF.md

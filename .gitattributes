@@ -1,0 +1,2 @@
+*.ndjson.gz binary
+dataset/** linguist-vendored

@@ -1,0 +1,43 @@
+# Minimal Elastic + Kibana + Fleet lab for regenerating the benchmark telemetry.
+# Single-node, dev settings. NOT production-hardened. Requires ~4GB RAM for ES.
+#   docker compose up -d
+# Then follow lab/README.md to enroll a victim with Defend + Zeek + Suricata.
+name: secops-bench-lab
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.3
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-changeme-lab}
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false        # dev only; TLS off for simplicity
+    ports: ["9200:9200"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u elastic:${ELASTIC_PASSWORD:-changeme-lab} http://localhost:9200/_cluster/health | grep -q '\"status\"'"]
+      interval: 10s
+      retries: 30
+    ulimits: { memlock: { soft: -1, hard: -1 } }
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.3
+    depends_on: { elasticsearch: { condition: service_healthy } }
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD:-changeme-kib}
+      - XPACK_FLEET_AGENTS_ENABLED=true
+    ports: ["5601:5601"]
+
+  fleet-server:
+    image: docker.elastic.co/elastic-agent/elastic-agent:8.17.3
+    depends_on: { kibana: { condition: service_started } }
+    environment:
+      - FLEET_SERVER_ENABLE=1
+      - FLEET_SERVER_ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - FLEET_SERVER_SERVICE_TOKEN=${FLEET_SERVER_SERVICE_TOKEN:?generate in Kibana Fleet settings}
+      - FLEET_SERVER_POLICY_ID=fleet-server-policy
+    ports: ["8220:8220"]
+
+# After 'up': set kibana_system + elastic passwords (docker exec ... elasticsearch-reset-password),
+# create a Fleet service token in Kibana → Fleet → Settings, then re-up fleet-server.

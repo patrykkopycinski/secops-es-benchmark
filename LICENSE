@@ -1,0 +1,12 @@
+secops-es-benchmark is dual-licensed.
+
+- CODE  — everything under benchmark/ (runner, judge, grader, pseudonymizer,
+  exporters), corpus/scenarios/, dataset/elastic/, and lab/ — is licensed under the
+  Apache License 2.0. See LICENSE-CODE.
+
+- DATA  — the datasets under dataset/ and the ground-truth under corpus/cases/ — is
+  licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
+  See LICENSE-DATA.
+
+Copyright 2026 TocharianOU. Provided "AS IS", without warranty. See ETHICS.md for
+authorization, de-identification, and responsible-use terms.

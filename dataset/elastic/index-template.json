@@ -1,0 +1,7 @@
+{
+  "index_patterns": ["logs-*-bench", "benchmark-*"],
+  "priority": 200,
+  "composed_of": ["benchmark-secops-mappings"],
+  "template": { "settings": { "number_of_replicas": 0 } },
+  "_meta": { "description": "SecOps benchmark dataset — typed mappings for loaded case data" }
+}
