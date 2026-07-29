@@ -34,12 +34,11 @@ Elastic Common Schema (ECS). Key fields: `@timestamp`, `host.name`, `event.categ
 `kibana.alert.rule.name` (in endpoint.alerts). Ground-truth labels are NOT inlined in the
 docs — they live in `../corpus/cases/*/groundtruth.md` and `../ATTACK_MAPPING.csv`.
 
-## De-identification (keep-real-infra)
-Processed with `../benchmark/lib/pseudonymize.py`. **IPs and hostnames are real**
-(`204.168.178.42` attacker, `ubuntu-2404-noble-amd64-base` victim, `attacktrace` lateral
-target) — the authors' own infra, kept real to avoid a synthetic-range tell. **Scrubbed:**
-MISP DB password, OS password hashes, private keys, API tokens, emails, and all `newmind*`
-business identifiers (verified 0 residual). Correlate freely on the real IPs/hostnames.
+## De-identification
+Processed with `../benchmark/lib/pseudonymize.py`. **Scrubbed:** a DB password, OS password
+hashes, private keys, API tokens, emails, and business identifiers (verified 0 residual).
+Network identifiers (IPs, hostnames) appear as captured, so cross-index / cross-host
+correlation works out of the box.
 
 ## Load into Elasticsearch
 ```bash

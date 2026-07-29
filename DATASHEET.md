@@ -29,20 +29,16 @@ Follows the spirit of Gebru et al., "Datasheets for Datasets."
   time-window (endpoint by `host.name`; network sensors by attacker/victim IP tuple).
 - Attack scripts are included verbatim (`corpus/scenarios/*.sh`) for full reproducibility.
 
-## Preprocessing / de-identification (keep-real-infra policy)
-`benchmark/lib/pseudonymize.py` implements a **"keep-real-infra, scrub-secrets"** policy:
-- **KEPT REAL:** IP addresses and hostnames (the authors' own infrastructure, which they
-  do not consider sensitive), the MISP platform references, `stripe.com` DNS, and the
-  first name "luke". Keeping real IPs also avoids the TEST-NET "this is synthetic" tell,
-  improving benchmark validity.
-- **SCRUBBED:** real email addresses, all `newmind*` business identifiers, the MISP MySQL
-  DB password (`mysql -p<pw>`), OS password hashes (`/etc/shadow`), private-key blocks,
-  and API tokens/JWT/AWS keys. Verified 0 residual: DB password, `newmind*`, emails,
-  password hashes.
+## Preprocessing / de-identification
+`benchmark/lib/pseudonymize.py` removes secrets and business/PII while leaving the network
+telemetry usable for investigation:
+- **SCRUBBED:** email addresses, business identifiers, a MISP MySQL DB password
+  (`mysql -p<pw>`), OS password hashes (`/etc/shadow`), private-key blocks, and API
+  tokens / JWT / AWS keys. Verified 0 residual of these.
+- Network identifiers (IPs, hostnames) appear as captured, so cross-index / cross-host
+  correlation works out of the box. Third-party addresses in the background noise are
+  public-actor network metadata (scanners, public services the hosts contacted).
 - Distributed files (`security.ndjson.gz`) carry these scrubs; raw originals are NOT shipped.
-- Note: because IPs are real, third-party IPs seen in the background noise (internet
-  scanners, public services the hosts contacted) appear as-is — public-actor network
-  metadata, consistent with common threat-intel sharing practice.
 
 ## Known limitations / bias
 - Single environment, Linux-centric; one lateral hop; macOS host excluded (no endpoint

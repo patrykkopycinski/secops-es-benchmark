@@ -13,3 +13,6 @@ __pycache__/
 
 # internal operator doc — not for publication (SSH key names, live ops, infra)
 HANDOFF.md
+
+# editor / tooling local config
+.claude/
