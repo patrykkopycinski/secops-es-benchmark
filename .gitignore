@@ -16,6 +16,8 @@ __pycache__/
 HANDOFF.md
 # internal research log — unpublished paper framing / TODOs
 RESEARCH_LOG.md
+# publishing metadata (HF/Kaggle cards) — local only, not for the GitHub repo
+publish/
 
 # editor / tooling local config
 .claude/
