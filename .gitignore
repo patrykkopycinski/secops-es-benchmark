@@ -6,6 +6,7 @@
 *.raw.ndjson
 # runtime / cruft
 benchmark/results/
+benchmark/runner/results/
 __pycache__/
 *.pyc
 .DS_Store
@@ -13,6 +14,8 @@ __pycache__/
 
 # internal operator doc — not for publication (SSH key names, live ops, infra)
 HANDOFF.md
+# internal research log — unpublished paper framing / TODOs
+RESEARCH_LOG.md
 
 # editor / tooling local config
 .claude/
