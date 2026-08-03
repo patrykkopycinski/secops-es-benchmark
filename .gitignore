@@ -4,6 +4,9 @@
 !*.env.example
 .salt
 *.raw.ndjson
+# unsealed answer keys — recovered locally from benchmark/ANSWERS.sealed, never committed
+.keys/
+
 # runtime / cruft
 benchmark/results/
 benchmark/runner/results/
