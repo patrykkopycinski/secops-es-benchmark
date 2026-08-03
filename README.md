@@ -1,6 +1,6 @@
 # secops-es-benchmark
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21770551.svg)](https://doi.org/10.5281/zenodo.21770551)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21770551-blue.svg)](https://doi.org/10.5281/zenodo.21770551)
 [![Data: CC BY 4.0](https://img.shields.io/badge/Data-CC%20BY%204.0-blue.svg)](LICENSE-DATA)
 [![Code: Apache 2.0](https://img.shields.io/badge/Code-Apache%202.0-green.svg)](LICENSE-CODE)
 
