@@ -237,18 +237,26 @@ def cmd_unseal(args):
     payload = json.loads(decrypt(_read_sealed()))
     if payload.get("canary") != CANARY_SEALED:
         print("WARNING: sealed canary does not match this build", file=sys.stderr)
-    n = 0
+    n = kept = 0
     for rel, data in payload["files"].items():
         dst = KEYDIR / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         if dst.exists() and not getattr(args, "force", False):
+            kept += 1
             continue
         dst.write_text(data if isinstance(data, str)
                        else json.dumps(data, indent=2, ensure_ascii=False) + "\n")
         n += 1
     if not getattr(args, "quiet", False):
-        print(f"unsealed {n} answer-key files -> {_rel(KEYDIR)}/")
-        print("(gitignored; the graders and runner read them automatically)")
+        total = n + kept
+        if kept and not n:
+            # The graders unseal on demand, so this is the normal state after any run.
+            print(f"already unsealed — {kept} answer-key files present in {_rel(KEYDIR)}/")
+            print("(use --force to overwrite them from the sealed archive)")
+        else:
+            print(f"unsealed {n} of {total} answer-key files -> {_rel(KEYDIR)}/"
+                  + (f" ({kept} already present)" if kept else ""))
+            print("(gitignored; the graders and runner read them automatically)")
     return payload
 
 
