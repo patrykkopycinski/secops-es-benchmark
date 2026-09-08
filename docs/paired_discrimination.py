@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import json
 import math
 import os
@@ -52,11 +53,21 @@ BASE = os.environ.get("SECOPS_SWEEP_BASE") or os.path.dirname(os.path.abspath(__
 GRAPH_RESULTS = os.path.join(BASE, "graph_tier_results_179.json")
 SWEEP_RUNS = os.path.join(BASE, "sweep", "runs")
 
-# Unreleased models are excluded from published figures. Set SECOPS_EXCLUDE to a
-# comma-separated list of substrings to filter additional models out of the run.
+# Models excluded from published figures, as opaque digests so this file names
+# no unreleased product. Add more via SECOPS_EXCLUDE (comma-separated substrings).
+_EXCLUDED_DIGESTS = frozenset({
+    "b082730d30eea05c",  # unreleased
+    "96ba1e86a0154a75",  # unreleased
+})
 INTERNAL_MARKERS = tuple(
     m.strip() for m in os.environ.get("SECOPS_EXCLUDE", "").split(",") if m.strip()
 )
+
+
+def is_public(model: str) -> bool:
+    """False for unreleased models, matched by digest so no name is hardcoded."""
+    h = hashlib.sha256(model.strip().lower().encode()).hexdigest()[:16]
+    return h not in _EXCLUDED_DIGESTS and not any(mk in model for mk in INTERNAL_MARKERS)
 
 GRAPH_FIVE = [
     "openai-gpt-5.5",
@@ -261,7 +272,7 @@ def load_objective(public_only=True):
     per_rep = defaultdict(lambda: defaultdict(list))
     for run_dir in sorted(glob.glob(os.path.join(SWEEP_RUNS, "*.rep[123]"))):
         model = os.path.basename(run_dir).rsplit(".", 1)[0]
-        if public_only and any(mark in model for mark in INTERNAL_MARKERS):
+        if public_only and not is_public(model):
             continue
         files = glob.glob(os.path.join(run_dir, "*.json"))
         if not files:
