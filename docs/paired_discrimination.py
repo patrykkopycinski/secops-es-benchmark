@@ -70,6 +70,41 @@ GRAPH_FIVE = [
 # ---------------------------------------------------------------- statistics
 
 
+def _betacf(a, b, x, itmax=300, eps=3e-16):
+    qab, qap, qam = a + b, a + 1, a - 1
+    c, d = 1.0, 1 - qab * x / qap
+    d = 1 / (d if abs(d) > 1e-300 else 1e-300)
+    h = d
+    for m in range(1, itmax + 1):
+        m2 = 2 * m
+        for aa in (m * (b - m) * x / ((qam + m2) * (a + m2)),
+                   -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2))):
+            d = 1 + aa * d
+            c = 1 + aa / c
+            d = 1 / (d if abs(d) > 1e-300 else 1e-300)
+            c = c if abs(c) > 1e-300 else 1e-300
+            h *= d * c
+    return h
+
+
+def _betai(a, b, x):
+    """Regularized incomplete beta, for the exact Student-t CDF (no scipy here)."""
+    if x <= 0:
+        return 0.0
+    if x >= 1:
+        return 1.0
+    bt = math.exp(math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b)
+                  + a * math.log(x) + b * math.log(1 - x))
+    return bt * _betacf(a, b, x) / a if x < (a + 1) / (a + b + 2) \
+        else 1 - bt * _betacf(b, a, 1 - x) / b
+
+
+def _t_two_sided(t: float, df: int) -> float:
+    """Exact two-sided Student-t p. A normal approximation is anti-conservative
+    at these df (n=54 -> p understated by up to ~0.05 after Holm)."""
+    return _betai(df / 2, 0.5, df / (df + t * t)) if t else 1.0
+
+
 def _normal_two_sided(z: float) -> float:
     return 2 * (1 - 0.5 * (1 + math.erf(abs(z) / math.sqrt(2))))
 
@@ -82,7 +117,7 @@ def paired_t(diffs):
     sd = statistics.stdev(diffs)
     if sd == 0:
         return md, 0.0 if md != 0 else 1.0
-    return md, _normal_two_sided(md / (sd / math.sqrt(n)))
+    return md, _t_two_sided(md / (sd / math.sqrt(n)), n - 1)
 
 
 def wilcoxon(diffs):
