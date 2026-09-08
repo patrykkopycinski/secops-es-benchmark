@@ -11,6 +11,7 @@ reimplementation of the same arithmetic, which would only prove self-consistency
 Data-dependent checks are skipped automatically when the sweep artifacts are
 absent, so this stays runnable from a clean clone.
 """
+import hashlib
 import importlib.util
 import math
 import os
@@ -23,6 +24,24 @@ spec = importlib.util.spec_from_file_location("pd", os.path.join(HERE, "paired_d
 assert spec and spec.loader, "cannot load paired_discrimination.py"
 pd = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pd)
+
+
+def _known_excluded_names():
+    """Model names from the sweep dirs whose digest is in the exclusion set.
+
+    Reads names off disk rather than hardcoding them, so this file names no
+    unreleased product either. Yields nothing in a clean clone -- the digest
+    presence check below still holds.
+    """
+    import glob
+    seen = set()
+    for run in glob.glob(os.path.join(pd.SWEEP_RUNS, "*.rep[123]")):
+        name = os.path.basename(run).rsplit(".", 1)[0]
+        h = hashlib.sha256(name.strip().lower().encode()).hexdigest()[:16]
+        if h in pd._EXCLUDED_DIGESTS:
+            seen.add(name)
+    return sorted(seen)
+
 
 _fail, _n, _skip = [], 0, 0
 
@@ -115,26 +134,30 @@ try:
     bands = pd.tier_bands(oper, omodels, oq, 100.0, 10000, 0)
     ck("paired banding = 3 bands", len(bands) == 3)
     ck("top band holds 17 models", bands[0]["n"] == 17, f'lo={bands[0]["lo"]:.1f} hi={bands[0]["hi"]:.1f}')
-    ck("unreleased models excluded", not any(
-        mk in m for m in omodels for mk in ("gp-llm-v2", "rainbow-sprinkles")))
+    ck("unreleased models excluded", all(pd.is_public(m) for m in omodels),
+       f"{len(omodels)} public")
 except (Exception, SystemExit) as e:  # noqa: BLE001
     skip("objective tier", type(e).__name__)
 
 section("[8] unreleased models excluded by default")
 # Regression guard: exclusion must NOT depend on the caller setting an env var,
 # and the source must not name an unreleased model in plaintext.
+# Names live only as digests here too, so neither file leaks them. Recover a
+# name only if you already know it: sha256(name.lower())[:16].
+_EXCLUDED = sorted(pd._EXCLUDED_DIGESTS)
 _saved = os.environ.pop("SECOPS_EXCLUDE", None)
 try:
-    ck("is_public() rejects without env var", not pd.is_public("gp-llm-v2"))
-    ck("is_public() is case/space insensitive", not pd.is_public("  Rainbow-Sprinkles "))
+    ck("every excluded digest is rejected", all(
+        not pd.is_public(n) for n in _known_excluded_names()), f"{len(_EXCLUDED)} digests")
     ck("is_public() accepts a released model", pd.is_public("openai-gpt-5.5"))
+    ck("exclusion needs no env var", os.environ.get("SECOPS_EXCLUDE") is None)
 finally:
     if _saved is not None:
         os.environ["SECOPS_EXCLUDE"] = _saved
 
 _src = open(os.path.join(HERE, "paired_discrimination.py")).read()
-ck("source names no unreleased model", not any(
-    n in _src for n in ("gp-llm-v2", "rainbow" + "-sprinkles")))
+ck("source stores digests, not names", "_EXCLUDED_DIGESTS" in _src and all(
+    d in _src for d in _EXCLUDED))
 
 print("\n" + "=" * 58)
 print(f"{_n - len(_fail)}/{_n} passed" + (f", {_skip} skipped" if _skip else ""))
