@@ -217,16 +217,25 @@ def self_test():
               "openai-j":    _mk({"anthropic-a": 50, "google-b": 10, "openai-c": 80}),
           }, exclude=set())[1]), 1.0)
 
-    # 3. Exclusion actually excludes.
-    panel = {"anthropic-j": _mk({"anthropic-a": 90, "excluded-fixture": 99})}
-    models, _ = analyse(panel, exclude={"excluded-fixture"})
-    check("excluded model dropped", models, ["anthropic-a"])
+    # 3. Exclusion must be load-bearing. NOTE: a model whose family has no judge
+    #    is dropped by the family filter anyway, so excluding one of those proves
+    #    nothing. Use a model that WOULD otherwise be covered.
+    panel = {"anthropic-j": _mk({"anthropic-a": 90, "anthropic-b": 99})}
+    check("kept when not excluded", analyse(panel, exclude=set())[0],
+          ["anthropic-a", "anthropic-b"])
+    check("dropped when excluded", analyse(panel, exclude={"anthropic-b"})[0],
+          ["anthropic-a"])
 
-    # 4. Spearman sanity: a full reversal of 3 items is exactly -1.
+    # 4. ranks() must order by DESCENDING score. rho and rank-shift are invariant
+    #    to flipping both arms, so this needs asserting directly.
+    check("rank 1 is the highest score", ranks({"lo": 10, "hi": 90})["hi"], 1)
+    check("rank 2 is the lowest score", ranks({"lo": 10, "hi": 90})["lo"], 2)
+
+    # 5. Spearman sanity: a full reversal of 3 items is exactly -1.
     a, b = {"x": 1, "y": 2, "z": 3}, {"x": 3, "y": 2, "z": 1}
     check("spearman full reversal", spearman(a, b, list(a)), -1.0)
 
-    # 5. The digest guard must actually FIRE, not merely exist. Tested with a
+    # 6. The digest guard must actually FIRE, not merely exist. Tested with a
     #    synthetic name whose digest is injected for the duration, so no real
     #    unpublished name is reconstructed anywhere in this file.
     import hashlib
